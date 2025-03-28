@@ -34,12 +34,4 @@
   minify = true
 
 [build.processing.images]
-  compress = true
-
-[build.processing.skip_processing]
-  - "*.md"
-  - "*.json"
-  - "*.txt"
-  - "*.xml"
-  - "*.yml"
-  - "*.yaml" 
+  compress = true 
