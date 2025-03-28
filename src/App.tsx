@@ -62,7 +62,7 @@ function App() {
       
       // Then fetch weather data using coordinates
       const weatherResponse = await fetch(
-        `${config.weatherApi.baseUrl}/forecast?latitude=${location.latitude}&longitude=${location.longitude}&current=temperature_2m,relative_humidity_2m,apparent_temperature,wind_speed_10m,wind_direction_10m,pressure_msl&daily=temperature_2m_max,temperature_2m_min&timezone=auto`
+        `${config.weatherApi.baseUrl}/forecast?latitude=${location.latitude}&longitude=${location.longitude}&current=temperature_2m,relative_humidity_2m,apparent_temperature,wind_speed_10m,wind_direction_10m,pressure_msl&daily=temperature_2m_max,temperature_2m_min,apparent_temperature_max,apparent_temperature_min&timezone=auto`
       );
       
       if (!weatherResponse.ok) {
@@ -291,23 +291,6 @@ function App() {
                         </div>
                         <div className="text-lg">{weather.pressure} hPa</div>
                       </div>
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-4 mt-6">
-                    <div className="bg-gray-700 rounded-lg p-4">
-                      <div className="flex items-center gap-2 text-gray-400 mb-2">
-                        <Clock className="w-4 h-4" />
-                        <span>Sunrise</span>
-                      </div>
-                      <div className="text-lg">{formatTime(weather.sunrise)}</div>
-                    </div>
-                    <div className="bg-gray-700 rounded-lg p-4">
-                      <div className="flex items-center gap-2 text-gray-400 mb-2">
-                        <Clock className="w-4 h-4" />
-                        <span>Sunset</span>
-                      </div>
-                      <div className="text-lg">{formatTime(weather.sunset)}</div>
                     </div>
                   </div>
                 </div>
