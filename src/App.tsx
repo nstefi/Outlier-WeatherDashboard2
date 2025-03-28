@@ -37,14 +37,12 @@ function App() {
   const [unit, setUnit] = useState<'C' | 'F'>('C');
   const [lastUpdated, setLastUpdated] = useState<string>('');
 
-  const API_KEY = config.weatherApiKey;
-  
   const fetchWeather = async (searchCity: string) => {
     try {
       setLoading(true);
       setError('');
       const response = await fetch(
-        `https://api.openweathermap.org/data/2.5/weather?q=${searchCity}&appid=${API_KEY}&units=metric`
+        `https://api.openweathermap.org/data/2.5/weather?q=${searchCity}&appid=${config.weatherApiKey}&units=metric`
       );
       
       if (!response.ok) {
@@ -74,7 +72,7 @@ function App() {
 
       // Fetch 5-day forecast
       const forecastResponse = await fetch(
-        `https://api.openweathermap.org/data/2.5/forecast?q=${searchCity}&appid=${API_KEY}&units=metric`
+        `https://api.openweathermap.org/data/2.5/forecast?q=${searchCity}&appid=${config.weatherApiKey}&units=metric`
       );
       
       if (!forecastResponse.ok) {
