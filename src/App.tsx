@@ -226,7 +226,7 @@ function App() {
               </div>
             </div>
 
-            <div className="mt-6">
+            <div className="mt-6 hidden md:block">
               <h2 className="text-lg mb-2">Scan QR code to check the app on your mobile:</h2>
               <div className="bg-white p-3 rounded-xl inline-block">
                 <QRCodeSVG value={config.qrCode.url} size={160} />
