@@ -1,5 +1,5 @@
 import React from 'react';
-import { Search, MapPin, Thermometer, Wind, Droplets, Compass, Gauge, Sun, Clock, Cloud } from 'lucide-react';
+import { Search, MapPin, Thermometer, Wind, Droplets, Gauge, Sun, Clock, Cloud } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { config } from './config';
@@ -250,6 +250,7 @@ function App() {
                     <MapPin className="w-5 h-5 text-gray-400" />
                     <h2 className="text-xl">Current Weather in {weather.city}</h2>
                   </div>
+                  <div className="text-sm text-gray-400 mb-4">Last updated: {lastUpdated}</div>
 
                   <div className="flex items-center gap-8 mb-8">
                     <Cloud className="w-24 h-24 text-gray-400" />
