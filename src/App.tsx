@@ -30,7 +30,7 @@ interface GeocodingResult {
 }
 
 function App() {
-  const [searchCity, setSearchCity] = useState('');
+  const [searchCity, setSearchCity] = useState('London');
   const [weather, setWeather] = useState<Weather | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -38,6 +38,8 @@ function App() {
   const [lastUpdated, setLastUpdated] = useState<string>('');
 
   const fetchWeather = async (searchCity: string) => {
+    if (!searchCity) return;
+    
     try {
       setLoading(true);
       setError('');
@@ -52,11 +54,15 @@ function App() {
       }
       
       const geocodingData = await geocodingResponse.json();
+      if (!geocodingData.results?.length) {
+        throw new Error('City not found');
+      }
+      
       const location: GeocodingResult = geocodingData.results[0];
       
       // Then fetch weather data using coordinates
       const weatherResponse = await fetch(
-        `${config.weatherApi.baseUrl}/forecast?latitude=${location.latitude}&longitude=${location.longitude}&current=temperature_2m,relative_humidity_2m,wind_speed_10m,wind_direction_10m,pressure_msl,visibility&daily=temperature_2m_max,temperature_2m_min,apparent_temperature_max,apparent_temperature_min&timezone=auto`
+        `${config.weatherApi.baseUrl}/forecast?latitude=${location.latitude}&longitude=${location.longitude}&current=temperature_2m,relative_humidity_2m,apparent_temperature,wind_speed_10m,wind_direction_10m,pressure_msl&daily=temperature_2m_max,temperature_2m_min&timezone=auto`
       );
       
       if (!weatherResponse.ok) {
@@ -66,32 +72,51 @@ function App() {
       const data = await weatherResponse.json();
       
       setWeather({
-        city: location.name,
+        city: `${location.name}, ${location.country}`,
         temp: Math.round(data.current.temperature_2m),
         feelsLike: Math.round(data.current.apparent_temperature),
         tempMin: Math.round(data.daily.temperature_2m_min[0]),
         tempMax: Math.round(data.daily.temperature_2m_max[0]),
         humidity: data.current.relative_humidity_2m,
-        windSpeed: data.current.wind_speed_10m,
-        windDeg: data.current.wind_direction_10m,
-        pressure: data.current.pressure_msl,
-        visibility: data.current.visibility,
-        description: 'Weather data from Open-Meteo', // Open-Meteo doesn't provide weather descriptions
-        icon: '01d', // We'll need to implement our own icon logic based on weather conditions
-        sunrise: 0, // Open-Meteo doesn't provide sunrise/sunset times in the free API
+        windSpeed: Math.round(data.current.wind_speed_10m),
+        windDeg: Math.round(data.current.wind_direction_10m),
+        pressure: Math.round(data.current.pressure_msl),
+        visibility: 10, // Open-Meteo doesn't provide visibility in free tier
+        description: getWeatherDescription(data.current.temperature_2m, data.current.relative_humidity_2m),
+        icon: getIconCode(data.current.temperature_2m, data.current.relative_humidity_2m),
+        sunrise: 0,
         sunset: 0
       });
       
       setLastUpdated(new Date().toLocaleTimeString());
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An error occurred');
+      setWeather(null);
     } finally {
       setLoading(false);
     }
   };
 
+  // Helper function to determine weather description based on temperature and humidity
+  const getWeatherDescription = (temp: number, humidity: number) => {
+    if (humidity > 80) return 'Humid';
+    if (temp > 30) return 'Hot';
+    if (temp < 10) return 'Cold';
+    return 'Moderate';
+  };
+
+  // Helper function to determine icon based on temperature and humidity
+  const getIconCode = (temp: number, humidity: number) => {
+    if (humidity > 80) return '09d';
+    if (temp > 30) return '01d';
+    if (temp < 10) return '13d';
+    return '02d';
+  };
+
   useEffect(() => {
-    fetchWeather(searchCity);
+    if (searchCity) {
+      fetchWeather(searchCity);
+    }
   }, []);
 
   const handleSubmit = (e: React.FormEvent) => {
