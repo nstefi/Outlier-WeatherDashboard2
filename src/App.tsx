@@ -323,16 +323,16 @@ function App() {
                   </div>
                 </div>
 
-                <div className="bg-gray-800/50 rounded-xl p-6">
+                <div className="bg-gray-800/50 rounded-xl p-4 md:p-6">
                   <h2 className="text-xl mb-4">5-Day Forecast</h2>
-                  <div className="grid grid-cols-5 gap-4">
+                  <div className="grid grid-cols-2 md:grid-cols-5 gap-3 md:gap-4">
                     {weather.forecast.map((day, index) => (
-                      <div key={index} className="bg-gray-700/50 rounded-lg p-4">
-                        <div className="text-sm text-gray-400 mb-2">{day.date}</div>
-                        <Cloud className="w-8 h-8 text-gray-400 mb-2" />
-                        <div className="text-xl">{convertTemp(day.temp)}°{unit}</div>
-                        <div className="text-sm text-gray-400">{day.description}</div>
-                        <div className="text-sm text-gray-400">Humidity: {day.humidity}%</div>
+                      <div key={index} className="bg-gray-700/50 rounded-lg p-3 md:p-4">
+                        <div className="text-sm text-gray-400 mb-1 md:mb-2">{day.date}</div>
+                        <Cloud className="w-6 h-6 md:w-8 md:h-8 text-gray-400 mb-1 md:mb-2" />
+                        <div className="text-lg md:text-xl">{convertTemp(day.temp)}°{unit}</div>
+                        <div className="text-xs md:text-sm text-gray-400">{day.description}</div>
+                        <div className="text-xs md:text-sm text-gray-400">Humidity: {day.humidity}%</div>
                       </div>
                     ))}
                   </div>
