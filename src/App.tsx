@@ -20,18 +20,18 @@ interface Weather {
   sunset: number;
 }
 
-interface ForecastDay {
-  date: string;
-  temp: number;
-  icon: string;
-  description: string;
-  humidity: number;
+interface GeocodingResult {
+  id: number;
+  name: string;
+  latitude: number;
+  longitude: number;
+  country: string;
+  admin1?: string;
 }
 
 function App() {
-  const [city, setCity] = useState('London');
+  const [searchCity, setSearchCity] = useState('');
   const [weather, setWeather] = useState<Weather | null>(null);
-  const [forecast, setForecast] = useState<ForecastDay[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [unit, setUnit] = useState<'C' | 'F'>('C');
@@ -41,73 +41,62 @@ function App() {
     try {
       setLoading(true);
       setError('');
-      const response = await fetch(
-        `https://api.openweathermap.org/data/2.5/weather?q=${searchCity}&appid=${config.weatherApiKey}&units=metric`
+      
+      // First, get coordinates for the city
+      const geocodingResponse = await fetch(
+        `${config.weatherApi.geocodingUrl}/search?name=${searchCity}&count=1&language=en&format=json`
       );
       
-      if (!response.ok) {
+      if (!geocodingResponse.ok) {
         throw new Error('City not found');
       }
       
-      const data = await response.json();
+      const geocodingData = await geocodingResponse.json();
+      const location: GeocodingResult = geocodingData.results[0];
       
-      setWeather({
-        city: data.name,
-        temp: Math.round(data.main.temp),
-        feelsLike: Math.round(data.main.feels_like),
-        tempMin: Math.round(data.main.temp_min),
-        tempMax: Math.round(data.main.temp_max),
-        humidity: data.main.humidity,
-        windSpeed: Math.round(data.wind.speed),
-        windDeg: data.wind.deg,
-        pressure: data.main.pressure,
-        visibility: data.visibility / 1000, // Convert to km
-        description: data.weather[0].description,
-        icon: data.weather[0].icon,
-        sunrise: data.sys.sunrise,
-        sunset: data.sys.sunset
-      });
-
-      setLastUpdated(new Date().toLocaleString());
-
-      // Fetch 5-day forecast
-      const forecastResponse = await fetch(
-        `https://api.openweathermap.org/data/2.5/forecast?q=${searchCity}&appid=${config.weatherApiKey}&units=metric`
+      // Then fetch weather data using coordinates
+      const weatherResponse = await fetch(
+        `${config.weatherApi.baseUrl}/forecast?latitude=${location.latitude}&longitude=${location.longitude}&current=temperature_2m,relative_humidity_2m,wind_speed_10m,wind_direction_10m,pressure_msl,visibility&daily=temperature_2m_max,temperature_2m_min,apparent_temperature_max,apparent_temperature_min&timezone=auto`
       );
       
-      if (!forecastResponse.ok) {
-        throw new Error('Failed to fetch forecast');
+      if (!weatherResponse.ok) {
+        throw new Error('Failed to fetch weather data');
       }
       
-      const forecastData = await forecastResponse.json();
+      const data = await weatherResponse.json();
       
-      // Process forecast data (one entry per day)
-      const dailyForecast = forecastData.list
-        .filter((item: any) => item.dt_txt.includes('12:00:00'))
-        .slice(0, 5)
-        .map((item: any) => ({
-          date: new Date(item.dt * 1000).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' }),
-          temp: Math.round(item.main.temp),
-          icon: item.weather[0].icon,
-          description: item.weather[0].description,
-          humidity: item.main.humidity
-        }));
+      setWeather({
+        city: location.name,
+        temp: Math.round(data.current.temperature_2m),
+        feelsLike: Math.round(data.current.apparent_temperature),
+        tempMin: Math.round(data.daily.temperature_2m_min[0]),
+        tempMax: Math.round(data.daily.temperature_2m_max[0]),
+        humidity: data.current.relative_humidity_2m,
+        windSpeed: data.current.wind_speed_10m,
+        windDeg: data.current.wind_direction_10m,
+        pressure: data.current.pressure_msl,
+        visibility: data.current.visibility,
+        description: 'Weather data from Open-Meteo', // Open-Meteo doesn't provide weather descriptions
+        icon: '01d', // We'll need to implement our own icon logic based on weather conditions
+        sunrise: 0, // Open-Meteo doesn't provide sunrise/sunset times in the free API
+        sunset: 0
+      });
       
-      setForecast(dailyForecast);
+      setLastUpdated(new Date().toLocaleTimeString());
     } catch (err) {
-      setError('Failed to fetch weather data. Please try again.');
+      setError(err instanceof Error ? err.message : 'An error occurred');
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchWeather(city);
+    fetchWeather(searchCity);
   }, []);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    fetchWeather(city);
+    fetchWeather(searchCity);
   };
 
   const convertTemp = (temp: number, to: 'C' | 'F') => {
@@ -148,8 +137,8 @@ function App() {
               <div className="relative">
                 <input
                   type="text"
-                  value={city}
-                  onChange={(e) => setCity(e.target.value)}
+                  value={searchCity}
+                  onChange={(e) => setSearchCity(e.target.value)}
                   placeholder="Enter city name..."
                   className="w-full px-4 py-3 pr-12 rounded-xl bg-gray-700 border border-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500 text-white"
                 />
@@ -295,26 +284,6 @@ function App() {
                       </div>
                       <div className="text-lg">{formatTime(weather.sunset)}</div>
                     </div>
-                  </div>
-                </div>
-
-                {/* 5-Day Forecast */}
-                <div className="bg-gray-800 rounded-xl p-6">
-                  <h2 className="text-xl mb-4">5-Day Forecast</h2>
-                  <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-                    {forecast.map((day, index) => (
-                      <div key={index} className="bg-gray-700 rounded-lg p-4 text-center">
-                        <div className="text-sm text-gray-400 mb-2">{day.date}</div>
-                        <div className="flex justify-center mb-2">
-                          {getWeatherIcon(day.icon, 'w-10 h-10')}
-                        </div>
-                        <div className="text-lg font-semibold">
-                          {convertTemp(day.temp, unit)}°{unit}
-                        </div>
-                        <div className="text-sm text-gray-400 capitalize">{day.description}</div>
-                        <div className="text-sm text-gray-400">Humidity: {day.humidity}%</div>
-                      </div>
-                    ))}
                   </div>
                 </div>
               </>
